@@ -303,21 +303,25 @@ then
         TOTCAPSSD=`cat ${TMPDIR}/3par_${COMMAND}.${INSERV}.out | tail -1 | cut -d, -f1`
         FREECAPSSD=`cat ${TMPDIR}/3par_${COMMAND}.${INSERV}.out | tail -1 | cut -d, -f2`
         USEDCAPPCSSD=`expr 100 \- \( \( $FREECAPSSD \* 100 \) \/ $TOTCAPSSD \)`
+		USEDCAPSSD=$((($TOTCAPSSD-$FREECAPSSD)/1024))
+		WARNCAPSSDRAW=$(($TOTCAPSSD*$PCWARNINGSSD/102400))
+		CRITCAPSSDRAW=$(($TOTCAPSSD*$PCCRITICALSSD/102400))
+		TOTCAPSSDGB=$(($TOTCAPSSD/1024))
 
         if [ $USEDCAPPCSSD -ge $PCCRITICALSSD ]
         then
-                echo CRITICAL! Used SSD capacity = $USEDCAPPCSSD\% \( \> $PCCRITICALSSD\% \)
+                echo CRITICAL! Used SSD capacity = $USEDCAPPCSSD\% \( \> $PCCRITICALSSD\% \)\|UsedSpace=$USEDCAPPCSSD\%\;$PCWARNINGSSD\;$PCCRITICALSSD UsedSpaceinGB=$USEDCAPSSD\GB\;$WARNCAPSSDRAW\;$CRITCAPSSDRAW\;0\;$TOTCAPSSDGB
                 rm -f $TMPDIR/3par_$COMMAND.$INSERV.out
                 exit 2
         else
                 if [ $USEDCAPPCSSD -ge $PCWARNINGSSD ]
                 then
-                        echo WARNING! Used SSD capacity = $USEDCAPPCSSD\% \( \> $PCWARNINGSSD\% \)
+                        echo WARNING! Used SSD capacity = $USEDCAPPCSSD\% \( \> $PCWARNINGSSD\% \)\|UsedSpace=$USEDCAPPCSSD\%\;$PCWARNINGSSD\;$PCCRITICALSSD UsedSpaceinGB=$USEDCAPSSD\GB\;$WARNCAPSSDRAW\;$CRITCAPSSDRAW\;0\;$TOTCAPSSDGB
                         rm -f $TMPDIR/3par_$COMMAND.$INSERV.out
                         exit 1
                 else
 
-                        echo OK : Used SSD capacity = $USEDCAPPCSSD\%
+                        echo OK : Used SSD capacity = $USEDCAPPCSSD\%\|UsedSpace=$USEDCAPPCSSD\%\;$PCWARNINGSSD\;$PCCRITICALSSD UsedSpaceinGB=$USEDCAPSSD\GB\;$WARNCAPSSDRAW\;$CRITCAPSSDRAW\;0\;$TOTCAPSSDGB
                         rm -f $TMPDIR/3par_$COMMAND.$INSERV.out
                         exit 0
                 fi
@@ -343,25 +347,26 @@ then
 
 	TOTCAPFC=`cat ${TMPDIR}/3par_${COMMAND}.${INSERV}.out | tail -1 | cut -d, -f1`
 	FREECAPFC=`cat ${TMPDIR}/3par_${COMMAND}.${INSERV}.out | tail -1 | cut -d, -f2`
-  USEDCAPFC=$((($TOTCAPFC-$FREECAPFC)/1024))
-  WARNCAPFCRAW=$(($TOTCAPFC*$PCWARNINGFC/102400))
-  CRITCAPFCRAW=$(($TOTCAPFC*$PCCRITICALFC/102400))
 	USEDCAPPCFC=`expr 100 \- \( \( $FREECAPFC \* 100 \) \/ $TOTCAPFC \)`
+	USEDCAPFC=$((($TOTCAPFC-$FREECAPFC)/1024))
+    WARNCAPFCRAW=$(($TOTCAPFC*$PCWARNINGFC/102400))
+    CRITCAPFCRAW=$(($TOTCAPFC*$PCCRITICALFC/102400))
+	TOTCAPFCGB=$(($TOTCAPFC/1024))
 
 	if [ $USEDCAPPCFC -ge $PCCRITICALFC ]
         then
-                echo CRITICAL! Used FC capacity = $USEDCAPPCFC\% \( \> $PCCRITICALFC\% \)\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC Used Space in GB=$USEDCAPFC\GB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFC
+                echo CRITICAL! Used FC capacity = $USEDCAPPCFC\% \( \> $PCCRITICALFC\% \)\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC UsedSpaceinGB=$USEDCAPFC\GB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFCGB
                 rm -f $TMPDIR/3par_$COMMAND.$INSERV.out
 		exit 2
         else
         	if [ $USEDCAPPCFC -ge $PCWARNINGFC ]
         	then
-                	echo WARNING! Used FC capacity = $USEDCAPPCFC\% \( \> $PCWARNINGFC\% \)\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC Used Space in GB=$USEDCAPFC\GB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFC
+                	echo WARNING! Used FC capacity = $USEDCAPPCFC\% \( \> $PCWARNINGFC\% \)\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC UsedSpaceinGB=$USEDCAPFC\GB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFCGB
         	        rm -f $TMPDIR/3par_$COMMAND.$INSERV.out
 			exit 1
 	        else
 
-                        echo OK : Used FC capacity = $USEDCAPPCFC\%\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC Used Space in GB=$USEDCAPFC\GB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFC
+                        echo OK : Used FC capacity = $USEDCAPPCFC\%\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC UsedSpaceinGB=$USEDCAPFC\GB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFCGB
                         rm -f $TMPDIR/3par_$COMMAND.$INSERV.out
 			exit 0
                 fi
