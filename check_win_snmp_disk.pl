@@ -94,7 +94,7 @@ if ($#ARGV + 1 < 4) {
 	print "[critical-level] = Percentage full before return critical level to nagios\n";
 	print "[magic] =  Magic adaption of percentage levels for especially large or small filesystems\n";
 	print "For example the command:\n";
-	print "./check_win_snmp_disk.pl 10.0.0.10 public 80 90\n";
+	print "./check_win_snmp_disk.pl 10.0.0.10 public 80 90 0.7\n";
 	print "Will check disk All disks ('C:', 'D:' etc.) on the server at '10.0.0.10' using snmp community name 'public'. Warn at 80% full, Critical at 90% full\n";
 	exit $STATE_UNKNOWN;
 }
@@ -220,7 +220,7 @@ foreach $LDISK (@LDISKS){
 			$CRITRAWSIZE = $RAWSIZE*$CRITICAL/100; last SWITCH;
 		};	
 		if ($RAWSIZE > 0) {
-			$PERCENTUSED = $RAWUSED/$RAWSIZE * 100;
+			$PERCENTUSED = nearest(.01, $RAWUSED/$RAWSIZE * 100);
 			$WARNRAWSIZE = $RAWSIZE/100*$WARN;
 			$CRITRAWSIZE = $RAWSIZE/100*$CRITICAL; last SWITCH;
 		};
@@ -281,7 +281,7 @@ foreach $LDISK (@LDISKS){
 	
 	if ( $PERCENTUSED < $WARN ) { 
 		$LONGOUTPUT.="DISK: $DISKNAME(id: $LDISK) - OK : Percent Used : $PERCENTUSED% $THRESHOLDS, Total : $TOTAL $TOTALUNITS, Used : $USED $TOTALUNITS,  Free : $FREE $TOTALUNITS\n";
-		$PERFOUTPUT.="\"Disk $DISKNAME\"=$USED$TOTALUNITS;$WARNSIZE;$CRITSIZE;0;$TOTAL \"Disk $DISKNAME\"=$PERCENTUSED%;$WARN;$CRITICAL ";
+		$PERFOUTPUT.="\'Disk $DISKNAME\'=$USED$TOTALUNITS;$WARNSIZE;$CRITSIZE;0;$TOTAL \'Disk $DISKNAME\'=$PERCENTUSED%;$WARN;$CRITICAL ";
 		$OUTPUT.="DISK $DISKNAME - OK (Used: $PERCENTUSED%), ";
 		if ( ! $EXIT_CODE ){
 			$ERROUTPUT="DISK USAGE OK:";
@@ -292,7 +292,7 @@ foreach $LDISK (@LDISKS){
 	
 	if ( $PERCENTUSED < $CRITICAL ) { 
 		$LONGOUTPUT.="DISK: $DISKNAME(id: $LDISK) - WARNING : Percent Used : $PERCENTUSED% $THRESHOLDS, Total : $TOTAL $TOTALUNITS, Used : $USED $TOTALUNITS,  Free : $FREE $TOTALUNITS\n"; 
-		$PERFOUTPUT.="\"Disk $DISKNAME\"=$USED$TOTALUNITS;$WARNSIZE;$CRITSIZE;0;$TOTAL \"Disk $DISKNAME\"=$PERCENTUSED%;$WARN;$CRITICAL ";
+		$PERFOUTPUT.="\'Disk $DISKNAME\'=$USED$TOTALUNITS;$WARNSIZE;$CRITSIZE;0;$TOTAL \'Disk $DISKNAME\'=$PERCENTUSED%;$WARN;$CRITICAL ";
 		$OUTPUT.="DISK $DISKNAME - WARNING (Used: $PERCENTUSED%), ";
 		if ( $EXIT_CODE < $STATE_WARNING ){
 			if ( $PCTUSED <= $PERCENTUSED ){
@@ -307,7 +307,7 @@ foreach $LDISK (@LDISKS){
 	
 	if ( $PERCENTUSED >= $CRITICAL ) {
 		$LONGOUTPUT.="DISK: $DISKNAME(id: $LDISK) - CRITICAL : Percent Used : $PERCENTUSED% $THRESHOLDS, Total : $TOTAL $TOTALUNITS, Used : $USED $TOTALUNITS,  Free : $FREE $TOTALUNITS\n";
-		$PERFOUTPUT.="\"Disk $DISKNAME\"=$USED$TOTALUNITS;$WARNSIZE;$CRITSIZE;0;$TOTAL \"Disk $DISKNAME\"=$PERCENTUSED%;$WARN;$CRITICAL ";
+		$PERFOUTPUT.="\'Disk $DISKNAME\'=$USED$TOTALUNITS;$WARNSIZE;$CRITSIZE;0;$TOTAL \'Disk $DISKNAME\'=$PERCENTUSED%;$WARN;$CRITICAL ";
 		$OUTPUT.="DISK $DISKNAME - CRITICAL (Used: $PERCENTUSED%), ";
                 if ( $EXIT_CODE <= $STATE_CRITICAL ){
 			if ( $PCTUSED < $PERCENTUSED ){
