@@ -16,22 +16,28 @@ sub nearest {
  return (wantarray) ? @res : $res[0];
 }
 
-sub getnewlevel { 
+sub getnewlevel {
  my $RSIZE = shift;
  my $MLEVEL = shift;
 
-	$HGBSIZE = $RSIZE/$MNORMSIZE;
-	$FELTSIZE = $HGBSIZE**$MAGIC;
-	$SCALE=$FELTSIZE/$HGBSIZE;
-	$NEWLEVEL = 1- ((1-$MLEVEL))*$SCALE;
-	$NEWLEVEL = $NEWLEVEL*100;
-			
+        $HGBSIZE = $RSIZE/$MNORMSIZE;
+        $FELTSIZE = $HGBSIZE**$MAGIC;
+        $SCALE=$FELTSIZE/$HGBSIZE;
+        $NEWLEVEL = 1- ((1-$MLEVEL))*$SCALE;
+        $NEWLEVEL = $NEWLEVEL*100;
+
  return ($NEWLEVEL);
 }
 
+#Variables
 $MNORMSIZE=20;
-$MAGIC=0.6;
+$MAGIC=0.7;
+$DRIVESIZE=3000;
+$THRESHOLD=0.8;
 
-$NEW = getnewlevel(50,0.8);
+$NEW = getnewlevel($DRIVESIZE,$THRESHOLD);
+$NEW = nearest(0.001,$NEW);
+$FREESPACE = $DRIVESIZE - ($DRIVESIZE* $NEW / 100);
 
-print "$NEW\n";
+print "Magic Percentage: $NEW\n";
+print "Free Space left: $FREESPACE\n";
