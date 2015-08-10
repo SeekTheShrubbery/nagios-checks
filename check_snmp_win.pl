@@ -338,6 +338,7 @@ for (my $i=0; $i< $num_int; $i++) {
 }
 
 my $force_critical=0;
+my $matches="";
 
 # Show the services that are not present
 # Or all of them with -s option
@@ -345,9 +346,15 @@ foreach my $List (@o_descrL) {
   my $test=0;
   for (my $i=0; $i< $num_int; $i++) {
     if (defined($o_noreg)){
-      if ($descr[$i] eq $List) { $test++;}
+      if ($descr[$i] eq $List) { 
+		  $test++;
+		  $matches.= "Started: $descr[$i]\n";
+	  }
     } else {
-      if ( $descr[$i] =~ /$List/i ) { $test++; }
+      if ( $descr[$i] =~ /$List/i ) { 
+	      $test++; 
+		  $matches.= "Started: $descr[$i]\n";
+	  }
     }
   }
   if ($test==0) {
@@ -368,9 +375,11 @@ $o_number = $#o_descrL+1 if (!defined($o_number));
 
 if (($num_int_ok < $o_number)||($force_critical == 1)) { 
 	print "CRITICAL: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	print $matches;
 	exit $ERRORS{"CRITICAL"};
 } elsif ($num_int_ok > $o_number) {
 	print "WARNING: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	print $matches;
 	exit $ERRORS{"WARNING"};
 }
 
@@ -378,6 +387,7 @@ if (defined ($output) ) {
   print $output, " : ";  
 } else {
   print "OK: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+  print $matches;
 }
 
 #print "OK\n";
