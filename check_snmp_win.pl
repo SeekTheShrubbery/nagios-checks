@@ -2,7 +2,9 @@
 ############################## check_snmp_win ##############
 my $Version='1.1';
 # Date : Oct 12 2007
+# Changes : Aug 06 2015
 # Author  : Patrick Proy (patrick at proy.org)
+# Changes : pashol
 # Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : Tenaku
