@@ -46,12 +46,12 @@ sub getnewlevel {
  my $RSIZE = shift;
  my $MLEVEL = shift;
  
-		$MLEVEL = $MLEVEL/100;
+	$MLEVEL = $MLEVEL/100;
         $HGBSIZE = $RSIZE/$MNORMSIZE;
         $FELTSIZE = $HGBSIZE**$MAGIC;
         $SCALE=$FELTSIZE/$HGBSIZE;
         $NEWLEVEL = 1- ((1-$MLEVEL))*$SCALE;
-		$NEWLEVEL = $NEWLEVEL*100;
+	$NEWLEVEL = $NEWLEVEL*100;
 
  return ($NEWLEVEL);
 }
