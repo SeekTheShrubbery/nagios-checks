@@ -2,9 +2,7 @@
 ############################## check_snmp_win ##############
 my $Version='1.1';
 # Date : Oct 12 2007
-# Changes : Aug 06 2015
 # Author  : Patrick Proy (patrick at proy.org)
-# Changes : pashol
 # Help : http://nagios.manubulon.com/
 # Licence : GPL - http://www.fsf.org/licenses/gpl.txt
 # Contrib : Tenaku
@@ -375,12 +373,12 @@ foreach my $List (@o_descrL) {
 
 $o_number = $#o_descrL+1 if (!defined($o_number));
 
-if (($num_int_ok < $o_number)||($force_critical == 1)) { 
-	print "CRITICAL: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+if (($num_int_ok < $o_number)||($force_critical == 1)) {
+	print "CRITICAL: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
 	print $matches;
 	exit $ERRORS{"CRITICAL"};
 } elsif ($num_int_ok > $o_number) {
-	print "WARNING: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	print "WARNING: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
 	print $matches;
 	exit $ERRORS{"WARNING"};
 }
@@ -388,7 +386,12 @@ if (($num_int_ok < $o_number)||($force_critical == 1)) {
 if (defined ($output) ) {
   print $output, " : ";  
 } else {
-  print "OK: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+  if (defined($o_number)){
+	print "OK: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+  } else {
+	print "OK: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+  }
+  
   print $matches;
 }
 
