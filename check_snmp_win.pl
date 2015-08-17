@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 ############################## check_snmp_win ##############
-my $Version='1.1';
+my $Version='1.3';
+# Modified : pashol 
+# Date : Aug 17 2015
 # Date : Oct 12 2007
 # Author  : Patrick Proy (patrick at proy.org)
 # Help : http://nagios.manubulon.com/
@@ -301,6 +303,12 @@ foreach my $key ( keys %$resultat) {
   }
 }
 
+# Creating Nagios friendly output
+my $o_descr_nagiosfriendly = $o_descr;
+my $r_rem = "\|";
+my $r_rep = " or ";
+$o_descr_nagiosfriendly =~ s/\Q$r_rem\E/$r_rep/go; 
+
 if ( $num_int == 0) {
    if (defined ($o_number) && ($o_number ==0)) {
     print "OK: No services ",(defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\" found\n";
@@ -374,11 +382,12 @@ foreach my $List (@o_descrL) {
 $o_number = $#o_descrL+1 if (!defined($o_number));
 
 if (($num_int_ok < $o_number)||($force_critical == 1)) {
-	print "CRITICAL: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	# print "CRITICAL: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	print "CRITICAL: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr_nagiosfriendly, "\")\n";
 	print $matches;
 	exit $ERRORS{"CRITICAL"};
 } elsif ($num_int_ok > $o_number) {
-	print "WARNING: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	print "WARNING: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr_nagiosfriendly, "\")\n";
 	print $matches;
 	exit $ERRORS{"WARNING"};
 }
@@ -386,12 +395,11 @@ if (($num_int_ok < $o_number)||($force_critical == 1)) {
 if (defined ($output) ) {
   print $output, " : ";  
 } else {
-  if (defined($o_number)){
-	print "OK: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+  if (defined($o_number)) {
+	print "OK: $num_int_ok of $o_number services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr_nagiosfriendly, "\")\n";
   } else {
-	print "OK: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr, "\")\n";
+	print "OK: $num_int_ok services active (", (defined ($o_noreg)) ? "named \"" : "matching \"", $o_descr_nagiosfriendly, "\")\n";
   }
-  
   print $matches;
 }
 
