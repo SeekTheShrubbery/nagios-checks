@@ -47,7 +47,6 @@ my @hum = split(/[\/,]/, $opt_hum);
 my @illum = split(/[\/,]/, $opt_illum);
 
 my ($hwarnlow, $hwarnhigh, $hcritlow, $hcrithigh) = @hum;
-my ($twarnlow, $twarnhigh, $tcritlow, $tcrithigh) = @temp;
 
 my $vals = &read_sensor($sensor, $opt_timeout);
 
@@ -74,11 +73,11 @@ if ($opt_typ eq '') {
 } else {
 #	print "[";
 	if ($opt_typ eq "temp") {
-		print "Temp: $vals->{'temperature'} $vals->{'temp-unit'} |$vals->{'temp-unit'}=$vals->{'temperature'}";
+		print "Temp: $vals->{'temperature'} $vals->{'temp-unit'} |$vals->{'temp-unit'}=$vals->{'temperature'}\n";
 	} elsif ($opt_typ eq "hum") {
-		print "Humidity: $vals->{'humidity'}% |Humidity=$vals->{'humidity'}%;$hwarnlow:$hwarnhigh;$hcritlow:$hcrithigh;0;100";
+		print "Humidity: $vals->{'humidity'}% |Humidity=$vals->{'humidity'}%;$hwarnlow:$hwarnhigh;$hcritlow:$hcrithigh;0;100\n";
 	} elsif ($opt_typ eq "illum") {
-		print "Illum: $vals->{'illumination'} |Illum=$vals->{'illumination'}";
+		print "Illum: $vals->{'illumination'} |Illum=$vals->{'illumination'}\n";
 	}
 
 #	print "]\n";
@@ -196,6 +195,12 @@ sub read_sensor {
         exit($ERRORS{'UNKNOWN'});
     }
 
+	# Exit with unknown in case of no return values
+	if ((!defined($read->{'temperature'})) || (!defined($read->{'humidity'})) || (!defined($read->{'illumination'}))) {
+		print "No values received from sensor\n";
+		exit($ERRORS{'UNKNOWN'});
+	}
+	
     return $read ;
 };
 
