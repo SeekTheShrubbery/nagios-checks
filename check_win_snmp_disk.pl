@@ -176,16 +176,21 @@ foreach $LDISK (@LDISKS){
 	$DISKNAME =~ s/ //g;
 	$DISKNAME =~ s/\n//g;
 
-        if ($DISKNAME =~ m/\d+/ ) {
-                print "ERROR : Unexpected result from snmpget - Wrong Disk name: '$DISKNAME'.\n";
-                exit $STATE_UNKNOWN;
-        }
+    if ($DISKNAME =~ m/\d+/ ) {
+        print "ERROR : Unexpected result from snmpget - Wrong Disk name: '$DISKNAME'.\n";
+        exit $STATE_UNKNOWN;
+    }
 
 	$RAWUSED=`$snmpget -v 1 $SERVER -c $COMMUNITYNAME HOST-RESOURCES-MIB::hrStorage.hrStorageTable.hrStorageEntry.hrStorageUsed.$LDISK -t 5| awk '{ print \$4 }'`;
 	$RAWUSED =~ s/\n//g;
 	if ($RAWUSED !~ m/\d+/) {
 		print "ERROR : Unexpected result from snmpget\n";
 		exit $STATE_UNKNOWN;
+	}
+	
+	#fix for large drives >2TB
+	if ($RAWUSED < 0) {
+		$RAWUSED = $RAWUSED + 4294967296;
 	}
 	
 	# Size of disk
@@ -195,6 +200,12 @@ foreach $LDISK (@LDISKS){
 		print "ERROR : Unexpected result from snmpget\n";
 		exit $STATE_UNKNOWN;
 	}
+	
+	# fix for large drives > 2TB
+	if ($RAWSIZE < 0) {
+		$RAWSIZE = $RAWSIZE + 4294967296;
+	}
+
 	
 	# GET BYTE VALUE FOR DISK SYSTEM (512;1024;2048;4096)
 	$VALUE=`$snmpget -v 1 $SERVER -c $COMMUNITYNAME HOST-RESOURCES-MIB::hrStorage.hrStorageTable.hrStorageEntry.hrStorageAllocationUnits.$LDISK -t 5 | awk '{ print \$4 }'`;
