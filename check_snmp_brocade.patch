@@ -1,0 +1,44 @@
+--- check_snmp_brocade_3.2.0	2015-09-10 11:17:59.000000000 +0200
++++ check_snmp_brocade	2015-09-10 11:10:47.000000000 +0200
+@@ -822,11 +822,11 @@
+                         {
+                         if ( $perf_data == 1 )
+                            {
+-                           $perf_data = "$SensorInfo=$SensorValue;;;";
++                           $perf_data = "$SensorInfo=$SensorValue;;; ";
+                            }
+                         else
+                            {
+-                           $perf_data = $perf_data . "$SensorInfo=$SensorValue;;;";
++                           $perf_data = $perf_data . "$SensorInfo=$SensorValue;;; ";
+                            }
+                         }
+                      }
+@@ -901,11 +901,11 @@
+                         {
+                         if ( $perf_data == 1 )
+                            {
+-                           $perf_data = "$SensorInfo=$SensorValue;;;";
++                           $perf_data = "$SensorInfo=$SensorValue;;; ";
+                            }
+                         else
+                            {
+-                           $perf_data = $perf_data . "$SensorInfo=$SensorValue;;;";
++                           $perf_data = $perf_data . "$SensorInfo=$SensorValue;;; ";
+                            }
+                         }
+                       }
+@@ -1076,11 +1076,11 @@
+                {
+                if ( $perf_data == 1 )
+                   {
+-                  $perf_data = "Port-$key=$port2temp{$key};$SFP_TempHighWarn;$SFP_TempHigh;";
++                  $perf_data = "Port-$key=$port2temp{$key};$SFP_TempHighWarn;$SFP_TempHigh; ";
+                   }
+                else
+                   {
+-                  $perf_data = $perf_data . "Port-$key=$port2temp{$key};$SFP_TempHighWarn;$SFP_TempHigh;";
++                  $perf_data = $perf_data . "Port-$key=$port2temp{$key};$SFP_TempHighWarn;$SFP_TempHigh; ";
+                   }
+                }
+             
