@@ -74,6 +74,11 @@ PCWARNINGNL=80
 PCCRITICALSSD=90
 PCWARNINGSSD=80
 
+if [ ! touch "$TMPOUTFILE" &>/dev/null ]
+then
+        echo "Can not write output file \"$TMPOUTFILE\", exiting."
+	exit 128
+fi 
 
 # To connect using the 3PAR CLI, uncomment the following line
 #CONNECTCOMMAND="/opt/3PAR/inform_cli_2.3.1/bin/cli -sys $INSERV -pwf $USERNAME"
