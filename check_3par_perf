@@ -296,7 +296,8 @@ then
                 exit 3
         fi
 
-        if [ `tail -1 "$TMPDIR/3par_$COMMAND.$INSERV.out"` = "No PDs listed" ]
+	LASTLINE=`tail -1 "$TMPDIR/3par_$COMMAND.$INSERV.out"`
+	if [ "$LASTLINE" = "No PDs listed" ] || [ "$LASTLINE" = "0,0" ]
         then
                 echo No SSD disks
                 rm -f "$TMPDIR/3par_$COMMAND.$INSERV.out"
@@ -340,8 +341,9 @@ then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
-
-	if [ `tail -1 "$TMPDIR/3par_$COMMAND.$INSERV.out"` = "No PDs listed" ]
+	
+	LASTLINE=`tail -1 "$TMPDIR/3par_$COMMAND.$INSERV.out"`
+	if [ "$LASTLINE" = "No PDs listed" ] || [ "$LASTLINE" = "0,0" ]
 	then
 		echo No FC disks
 		rm -f "$TMPDIR/3par_$COMMAND.$INSERV.out"
@@ -385,7 +387,8 @@ then
                 exit 3
         fi
 
-        if [ `tail -1 "$TMPDIR/3par_$COMMAND.$INSERV.out"` = "No PDs listed" ]
+	LASTLINE=`tail -1 "$TMPDIR/3par_$COMMAND.$INSERV.out"`
+	if [ "$LASTLINE" = "No PDs listed" ] || [ "$LASTLINE" = "0,0" ]
         then
                 echo No NL disks
                 rm -f "$TMPDIR/3par_$COMMAND.$INSERV.out"
