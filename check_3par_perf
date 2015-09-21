@@ -66,19 +66,13 @@ fi
 INSERV=$1
 USERNAME=$2
 COMMAND=$3
-TMPOUTFILE=$(mktemp -t "check_3par_perf-$INSERV.$COMMAND.XXXXXXXX.out" )
+TMPOUT=""
 PCCRITICALFC=90
 PCWARNINGFC=80
 PCCRITICALNL=90
 PCWARNINGNL=80
 PCCRITICALSSD=90
 PCWARNINGSSD=80
-
-if [ ! touch "$TMPOUTFILE" &>/dev/null ]
-then
-        echo "Can not write output file \"$TMPOUTFILE\", exiting."
-	exit 128
-fi 
 
 # To connect using the 3PAR CLI, uncomment the following line
 #CONNECTCOMMAND="/opt/3PAR/inform_cli_2.3.1/bin/cli -sys $INSERV -pwf $USERNAME"
@@ -90,27 +84,24 @@ CONNECTCOMMAND="ssh $USERNAME@$INSERV"
 
 if [ "$COMMAND" == "check_pd" ]
 then
-	$CONNECTCOMMAND showpd -showcols Id,State -nohdtot > "$TMPOUTFILE" 2>>"$TMPOUTFILE"".log"
+	TMPOUT=$( $CONNECTCOMMAND showpd -showcols Id,State -nohdtot 2>&1 )
 	if [ $? -gt 0 ]
 	then
 		echo Could not connect to InServ "$INSERV"
 		exit 3
 	fi
 
-	if [ `grep -c failed "$TMPOUTFILE"` -gt 0 ]
+	if [ $( echo "$TMPOUT" | grep -c failed ) -gt 0 ]
 	then
-		echo CRITICAL! The following PDs have abnormal status : `grep -v normal "$TMPOUTFILE" | tr -d '\n'`
-		rm -f "$TMPOUTFILE"
+		echo CRITICAL! The following PDs have abnormal status : $( echo "$TMPOUT" | grep -v normal | tr -d '\n' )
 		exit 2
 	else
-		if [ `grep -c degraded "$TMPOUTFILE"` -gt 0 ]
+		if [ $( echo "$TMPOUT" | grep -c failed ) -gt 0 ]
 		then	
-                        echo WARNING! The following PDs have abnormal status : `grep -v normal "$TMPOUTFILE" | tr -d '\n'`
-			rm -f "$TMPOUTFILE"
+                        echo WARNING! The following PDs have abnormal status : $( echo "$TMPOUT" | grep -v normal | tr -d '\n' )
 			exit 1
 		else
 			echo OK : All PDs have normal status
-			rm -f "$TMPOUTFILE"
 			exit 0
 		fi
 	fi
@@ -119,27 +110,24 @@ fi
 
 if [ "$COMMAND" == "check_node" ]
 then
-	$CONNECTCOMMAND shownode -s -nohdtot > "$TMPOUTFILE"
+	TMPOUT=$( $CONNECTCOMMAND shownode -s -nohdtot 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
 
-        if [ `grep -c -i failed "$TMPOUTFILE"` -gt 0 ]
+        if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
-                echo CRITICAL! The following nodes have abnormal status : `grep -i failed "$TMPOUTFILE" | tr -s " " | tr -d '\n'`
-                rm -f "$TMPOUTFILE"
+                echo CRITICAL! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
 		exit 2
         else
-                if [ `grep -c -i degraded "$TMPOUTFILE"` -gt 0 ]
+                if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
-                        echo WARNING! The following nodes have abnormal status : `grep -i degraded "$TMPOUTFILE" | tr -s " " | tr -d '\n'`
-                        rm -f "$TMPOUTFILE"
+                        echo WARNING! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
 			exit 1
                 else
                         echo OK : All nodes have normal status
-                        rm -f "$TMPOUTFILE"
 			exit 0
                 fi
         fi
@@ -147,52 +135,46 @@ fi
 
 if [ "$COMMAND" == "check_ps" ]
 then
-	$CONNECTCOMMAND shownode -ps -nohdtot > "$TMPOUTFILE"
+	TMPOUT=$( $CONNECTCOMMAND shownode -ps -nohdtot 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 RC=3
         fi
 
-        if [ `grep -c -i failed "$TMPOUTFILE"` -gt 0 ]
+        if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
-                echo CRITICAL! The following nodes have abnormal status : `grep -i failed "$TMPOUTFILE" | tr -s " " | tr -d '\n'`
-                rm -f "$TMPOUTFILE"
+                echo CRITICAL! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
 		RC=2
         else
-                if [ `grep -c -i degraded "$TMPOUTFILE"` -gt 0 ]
+                if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
-                        echo WARNING! The following nodes have abnormal status : `grep -i degraded "$TMPOUTFILE" | tr -s " " | tr -d '\n'`
-                        rm -f "$TMPOUTFILE"
+                        echo WARNING! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
 			RC=1
                 else
                         echo OK : All nodes have normal status
-                        rm -f "$TMPOUTFILE"
 			RC=0
                 fi
         fi
 
-	$CONNECTCOMMAND  showcage -d > "$TMPOUTFILE"
+	TMPOUT=$( $CONNECTCOMMAND showcage -d 2>&1 )
 	if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 RC=3
         fi
 
-        if [ `awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Failed") print cage" "$0}' "$TMPOUTFILE"|wc -l` -gt 0 ]
+        if [ $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Failed") print cage" "$0}' | wc -l ) -gt 0 ]
         then
-                echo CRITICAL! The following cages have abnormal status : `awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Failed") print cage" "$0}' "$TMPOUTFILE" | tr -s " " | tr -d '\n'`
-                rm -f "$TMPOUTFILE"
+                echo CRITICAL! The following cages have abnormal status : $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Failed") print cage" "$0}' | tr -s " " | tr -d '\n' )
 		RC=2
         else
-                if [ `awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Degraded") print cage" "$0}' "$TMPOUTFILE"|wc -l` -gt 0 ]
+                if [ $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Degraded") print cage" "$0}' | wc -l ) -gt 0 ]
                 then
-                        echo WARNING! The following cages have abnormal status : `awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Degraded") print cage" "$0}' "$TMPOUTFILE" | tr -s " " | tr -d '\n'`
-                        rm -f "$TMPOUTFILE"
+                        echo WARNING! The following cages have abnormal status : $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Degraded") print cage" "$0}' | tr -s " " | tr -d '\n' )
 			RC=1
                 else
                         echo OK : All nodes have normal status
-                        rm -f "$TMPOUTFILE"
 			RC=0
                 fi
         fi
@@ -200,27 +182,24 @@ fi
 
 if [ "$COMMAND" == "check_vv" ]
 then
-        $CONNECTCOMMAND showvv -showcols Name,State -notree -nohdtot > "$TMPOUTFILE"
+        TMPOUT=$( $CONNECTCOMMAND showvv -showcols Name,State -notree -nohdtot 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
 		exit 3
         fi
 
-        if [ `grep -c -i failed "$TMPOUTFILE"` -gt 0 ]
+        if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
                 echo CRITICAL! There are failed VVs. Contact 3PAR support
-                rm -f "$TMPOUTFILE"
 		exit 2
         else
-                if [ `grep -c -i degraded "$TMPOUTFILE"` -gt 0 ]
+                if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
                         echo WARNING! There are degraded VVs. Contact 3PAR support
-                        rm -f "$TMPOUTFILE"
 			exit 1
                 else
                         echo OK : All VVs are normal
-                        rm -f "$TMPOUTFILE"
 			exit 0
                 fi
         fi
@@ -229,27 +208,24 @@ fi
 
 if [ "$COMMAND" == "check_ld" ]
 then
-        $CONNECTCOMMAND showld -state -nohdtot > "$TMPOUTFILE"
+        TMPOUT=$( $CONNECTCOMMAND showld -state -nohdtot 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
 
-        if [ `grep -c -i failed "$TMPOUTFILE"` -gt 0 ]
+        if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
                 echo CRITICAL! There are failed LDs. Contact 3PAR support
-                rm -f "$TMPOUTFILE"
 		exit 2
         else
-                if [ `grep -c -i degraded "$TMPOUTFILE"` -gt 0 ]
+                if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
                         echo WARNING! There are degraded LDs. Contact 3PAR support
-                        rm -f "$TMPOUTFILE"
 			exit 1
                 else
                         echo OK : All LDs have normal status
-                        rm -f "$TMPOUTFILE"
 			exit 0
                 fi
         fi
@@ -257,29 +233,25 @@ fi
 
 if [ "$COMMAND" == "check_port_fc" ]
 then
-        $CONNECTCOMMAND showport -nohdtot > "$TMPOUTFILE""-1"
+        TMPOUT=$( $CONNECTCOMMAND showport -nohdtot 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
-	grep -v -i iscsi "$TMPOUTFILE""-1" | grep -v -i rcip > "$TMPOUTFILE"
-	rm -f "$TMPOUTFILE""-1"
+	TMPOUT=$( echo "$TMPOUT" | grep -v -i iscsi 2>&1 | grep -v -i rcip 2>&1 )
 
-        if [ `grep -c -i error "$TMPOUTFILE"` -gt 0 ]
+        if [ $( echo "$TMPOUT" | grep -c -i error ) -gt 0 ]
         then
                 echo CRITICAL! Some ports are in the error state
-                rm -f "$TMPOUTFILE" "$TMPOUTFILE""-1"
                 exit 2
         else
-                if [ `grep -c -i loss_sync "$TMPOUTFILE"` -gt 0 ] || [ `grep -c -i config_wait "$TMPOUTFILE"` -gt 0 ] || [ `grep -c -i login_wait "$TMPOUTFILE"` -gt 0 ] || [ `grep -c -i non_participate "$TMPOUTFILE"` -gt 0 ]
+                if [ $( echo "$TMPOUT" | grep -c -i loss_sync ) -gt 0 ] || [ $( echo "$TMPOUT" | grep -c -i config_wait ) -gt 0 ] || [ $( echo "$TMPOUT" | grep -c -i login_wait ) -gt 0 ] || [ $( echo "$TMPOUT" | grep -c -i non_participate ) -gt 0 ]
                 then
                         echo WARNING! Some ports are in an abnormal state \(loss_sync, config_wait, login_wait or non_participate\)
-                        rm -f "$TMPOUTFILE" "$TMPOUTFILE""-1"
                         exit 1
                 else
                         echo OK : All FC ports have normal status \(ready or offline\)
-                        rm -f "$TMPOUTFILE" "$TMPOUTFILE""-1"
                         exit 0
                 fi
         fi
@@ -288,24 +260,23 @@ fi
 
 if [ "$COMMAND" == "check_cap_ssd" ]
 then
-        $CONNECTCOMMAND showpd -p -devtype SSD -showcols Size_MB,Free_MB -csvtable > "$TMPOUTFILE"
+        TMPOUT=$( $CONNECTCOMMAND showpd -p -devtype SSD -showcols Size_MB,Free_MB -csvtable 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
 
-	LASTLINE=`tail -1 "$TMPOUTFILE"`
+	LASTLINE=$( echo "$TMPOUT" | tail -1 )
 	if [ "$LASTLINE" = "No PDs listed" ] || [ "$LASTLINE" = "0,0" ]
         then
                 echo No SSD disks
-                rm -f "$TMPOUTFILE"
                 exit 0
         fi
 
-        TOTCAPSSD=`cat "$TMPOUTFILE" | tail -1 | cut -d, -f1`
-        FREECAPSSD=`cat "$TMPOUTFILE" | tail -1 | cut -d, -f2`
-        USEDCAPPCSSD=`expr 100 \- \( \( "$FREECAPSSD" \* 100 \) \/ "$TOTCAPSSD" \)`
+        TOTCAPSSD=$( echo "$TMPOUT" | tail -1 | cut -d, -f1 )
+        FREECAPSSD=$( echo "$TMPOUT" | tail -1 | cut -d, -f2 )
+        USEDCAPPCSSD="$(( 100 - ( ( $FREECAPSSD * 100 ) / $TOTCAPSSD ) ))"
 	USEDCAPSSD=$((($TOTCAPSSD-$FREECAPSSD)))
 	WARNCAPSSDRAW=$(($TOTCAPSSD*$PCWARNINGSSD/100))
 	CRITCAPSSDRAW=$(($TOTCAPSSD*$PCCRITICALSSD/100))
@@ -314,18 +285,15 @@ then
         if [ "$USEDCAPPCSSD" -ge "$PCCRITICALSSD" ]
         then
                 echo CRITICAL! Used SSD capacity = $USEDCAPPCSSD\% \( \> $PCCRITICALSSD\% \)\|UsedSpace=$USEDCAPPCSSD\%\;$PCWARNINGSSD\;$PCCRITICALSSD UsedSpace=$USEDCAPSSD\MB\;$WARNCAPSSDRAW\;$CRITCAPSSDRAW\;0\;$TOTCAPSSD
-                rm -f "$TMPOUTFILE"
                 exit 2
         else
                 if [ "$USEDCAPPCSSD" -ge "$PCWARNINGSSD" ]
                 then
                         echo WARNING! Used SSD capacity = $USEDCAPPCSSD\% \( \> $PCWARNINGSSD\% \)\|UsedSpace=$USEDCAPPCSSD\%\;$PCWARNINGSSD\;$PCCRITICALSSD UsedSpace=$USEDCAPSSD\MB\;$WARNCAPSSDRAW\;$CRITCAPSSDRAW\;0\;$TOTCAPSSD
-                        rm -f "$TMPOUTFILE"
                         exit 1
                 else
 
                         echo OK : Used SSD capacity = $USEDCAPPCSSD\%\|UsedSpace=$USEDCAPPCSSD\%\;$PCWARNINGSSD\;$PCCRITICALSSD UsedSpace=$USEDCAPSSD\MB\;$WARNCAPSSDRAW\;$CRITCAPSSDRAW\;0\;$TOTCAPSSD
-                        rm -f "$TMPOUTFILE"
                         exit 0
                 fi
         fi
@@ -334,24 +302,23 @@ fi
 
 if [ "$COMMAND" == "check_cap_fc" ]
 then
-        $CONNECTCOMMAND showpd -p -devtype FC -showcols Size_MB,Free_MB -csvtable > "$TMPOUTFILE"
+        TMPOUT=$( $CONNECTCOMMAND showpd -p -devtype FC -showcols Size_MB,Free_MB -csvtable 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
 	
-	LASTLINE=`tail -1 "$TMPOUTFILE"`
+	LASTLINE=$( echo "$TMPOUT" | tail -1 )
 	if [ "$LASTLINE" = "No PDs listed" ] || [ "$LASTLINE" = "0,0" ]
 	then
 		echo No FC disks
-		rm -f "$TMPOUTFILE"
 		exit 0
 	fi
 
-	TOTCAPFC=`cat "$TMPOUTFILE" | tail -1 | cut -d, -f1`
-	FREECAPFC=`cat "$TMPOUTFILE" | tail -1 | cut -d, -f2`
-	USEDCAPPCFC=`expr 100 \- \( \( "$FREECAPFC" \* 100 \) \/ "$TOTCAPFC" \)`
+	TOTCAPFC=$( echo "$TMPOUT" | tail -1 | cut -d, -f1 )
+	FREECAPFC=$( echo "$TMPOUT" | tail -1 | cut -d, -f2 )
+	USEDCAPPCFC="$(( 100 - ( ( $FREECAPFC * 100 ) / $TOTCAPFC ) ))"
 	USEDCAPFC=$((($TOTCAPFC-$FREECAPFC)))
     	WARNCAPFCRAW=$(($TOTCAPFC*$PCWARNINGFC/100))
     	CRITCAPFCRAW=$(($TOTCAPFC*$PCCRITICALFC/100))
@@ -360,18 +327,15 @@ then
 	if [ "$USEDCAPPCFC" -ge "$PCCRITICALFC" ]
         then
                 echo CRITICAL! Used FC capacity = $USEDCAPPCFC\% \( \> $PCCRITICALFC\% \)\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC UsedSpace=$USEDCAPFC\MB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFC
-                rm -f "$TMPOUTFILE"
 		exit 2
         else
         	if [ "$USEDCAPPCFC" -ge "$PCWARNINGFC" ]
         	then
                 	echo WARNING! Used FC capacity = $USEDCAPPCFC\% \( \> $PCWARNINGFC\% \)\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC UsedSpace=$USEDCAPFC\MB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFC
-                        rm -f "$TMPOUTFILE"
 			exit 1
 	        else
 
                         echo OK : Used FC capacity = $USEDCAPPCFC\%\|UsedSpace=$USEDCAPPCFC\%\;$PCWARNINGFC\;$PCCRITICALFC UsedSpace=$USEDCAPFC\MB\;$WARNCAPFCRAW\;$CRITCAPFCRAW\;0\;$TOTCAPFC
-                        rm -f "$TMPOUTFILE"
 			exit 0
                 fi
         fi
@@ -379,39 +343,35 @@ fi
 
 if [ "$COMMAND" == "check_cap_nl" ]
 then
-        $CONNECTCOMMAND showpd -p -devtype NL -showcols Size_MB,Free_MB -csvtable > "$TMPOUTFILE"
+        TMPOUT=$( $CONNECTCOMMAND showpd -p -devtype NL -showcols Size_MB,Free_MB -csvtable 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
                 exit 3
         fi
 
-	LASTLINE=`tail -1 "$TMPOUTFILE"`
+	LASTLINE=$(echo "$TMPOUT" | tail -1 )
 	if [ "$LASTLINE" = "No PDs listed" ] || [ "$LASTLINE" = "0,0" ]
         then
                 echo No NL disks
-                rm -f "$TMPOUTFILE"
 		exit 0
         fi
 
-        TOTCAPNL=`cat "$TMPOUTFILE" | tail -1 | cut -d, -f1`
-        FREECAPNL=`cat "$TMPOUTFILE" | tail -1 | cut -d, -f2`
-        USEDCAPPCNL=`expr 100 \- \( \( "$FREECAPNL" \* 100 \) \/ "$TOTCAPNL" \)`
+        TOTCAPNL=$( echo "$TMPOUT" | tail -1 | cut -d, -f1 )
+        FREECAPNL=$( echo "$TMPOUT" | tail -1 | cut -d, -f2 )
+        USEDCAPPCNL="$(( 100 - ( ( $FREECAPNL * 100 ) / $TOTCAPNL ) ))"
 
         if [ "$USEDCAPPCNL" -ge "$PCCRITICALNL" ]
         then
                 echo CRITICAL! Used NL capacity = $USEDCAPPCNL\% \( \> $PCCRITICALNL\% \)
-                rm -f "$TMPOUTFILE"
 		exit 2
         else
                 if [ "$USEDCAPPCNL" -ge "$PCWARNINGNL" ]
                 then
                         echo WARNING! Used NL capacity = $USEDCAPPCNL\% \( \> $PCWARNINGNL\% \)
-                        rm -f "$TMPOUTFILE"
 			exit 1
                 else
                         echo OK : Used NL capacity = $USEDCAPPCNL\%
-                        rm -f "$TMPOUTFILE"
 			exit 0
                 fi
         fi
