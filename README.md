@@ -12,6 +12,16 @@ It is not possible to get the OID's for stopped services. Which would be a huge 
 Added the magic number functionality, which was developed by check_mk. For any details, please head over to https://mathias-kettner.de/checkmk_filesystems.html
 In addition you can also find a perl implemenation of the python script below.
 
+#check_datadomain
+Added some of the performance data to the original check from https://github.com/fatz/datadomain-monitoring/tree/master/nagios_check
+
+#check_em01.pl
+Added some more values to the performance data to get the graphing right, which includes the min/max values. In addition, our sensor retunred many times no values, which ended up as critical in nagios. Which in return gave a bad SLA at the end of the month. Therefore it goes into unknown now.
+Original here: https://exchange.nagios.org/directory/Plugins/Hardware/Environmental/Websensor-EM01b/details
+
+#check_snmp_brocade
+Wrong performance output. It lacked the whitespace between different counters.
+
 #copy_bp_to_nagios.sh
 A handler for thruk to copy over the bp config to nagios.
 
