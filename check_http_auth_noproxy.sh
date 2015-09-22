@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Checks internal webpages bypassing the local proxy
+# Checks internal webpages bypassing the local proxy and using NTLM Authentication to check for any response codes
 # USAGE: check_http_auth_noproxy.sh URL USERNAME PASSWORD EXPECTED_HTTP_CODE TIMEOUT
 # URL: URL to the site
 # USERNAME: Authentication User for web site
@@ -14,30 +14,18 @@ USER=$2
 PASSWORD=$3
 RESPONSE_CODE=${4:-200}
 TIMEOUT=${5:-10}
-
-case $RESPONSE_CODE in
-401)
-  EXPECTED_RETURN_CODE=6
-  ;;
-200)
-  EXPECTED_RETURN_CODE=0
-  ;;
-*)
-  EXPECTED_RETURN_CODE=0
-  ;;
-esac
+#SSL=${6:-S}
 
 start=`date +%s`
-wget -t 1 --timeout ${TIMEOUT} -O /dev/null -o /dev/null --user=${USER} --password=${PASSWORD} --no-proxy ${URL}
-WGET_RETURN_CODE=$?
+EXPECTED_RETURN_CODE=$(curl -s -o /dev/null -w '%{http_code}' ${URL} --proxy '' --connect-timeout ${TIMEOUT} -u ${USER}:${PASSWORD} -L --ntlm --head)
 end=`date +%s`
 
 PERFDATA="time=$(expr ${end} - ${start})s"
 
-if [ ${WGET_RETURN_CODE} -eq ${EXPECTED_RETURN_CODE} ] ; then
+if  [[ ${RESPONSE_CODE} ==  ${EXPECTED_RETURN_CODE} ]] ; then
   echo "HTTP OK: HTTP/1.1 ${RESPONSE_CODE} OK for ${URL}|${PERFDATA}"
   exit 0
 else
-  echo "HTTP CRITICAL: Did not receive HTTP/1.1 ${RESPONSE_CODE} for ${URL}|${PERFDATA}"
+  echo "HTTP CRITICAL: Did not receive HTTP/1.1 ${RESPONSE_CODE} for ${URL} (Response: ${EXPECTED_RETURN_CODE})|${PERFDATA}"
   exit 2
 fi
