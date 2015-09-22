@@ -17,7 +17,7 @@ TIMEOUT=${5:-10}
 #SSL=${6:-S}
 
 start=`date +%s`
-EXPECTED_RETURN_CODE=$(curl -s -o /dev/null -w '%{http_code}' ${URL} --proxy '' --connect-timeout ${TIMEOUT} -u ${USER}:${PASSWORD} -L --ntlm --head)
+EXPECTED_RETURN_CODE=$(curl -s -o /dev/null -w '%{http_code}' ${URL} --proxy '' --connect-timeout ${TIMEOUT} -u ${USER}:${PASSWORD} -L --ntlm --head --insecure)
 end=`date +%s`
 
 PERFDATA="time=$(expr ${end} - ${start})s"
