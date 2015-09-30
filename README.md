@@ -28,3 +28,5 @@ A handler for thruk to copy over the bp config to nagios.
 #df_magic_number.pl
 The perl version of the python script by https://mathias-kettner.de/checkmk_filesystems.html
 
+#check_ilias.pl
+Automate testing to login to learning platform Ilias
