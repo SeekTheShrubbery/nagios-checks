@@ -12,9 +12,9 @@ use Test::WWW::Mechanize;
 #######################
 # Settings
 #######################
-my $url = "https://mywebsite";
-my $username = "username";
-my $password = "password";
+my $url = "https://elearning.luks.ch";
+my $username = "holzmapa";
+my $password = "Hase123!";
 my $link = "Profil";
 my $expect_string = "Profil deaktiviert";
 my $number_of_tests = 4;
@@ -22,11 +22,6 @@ my $number_of_tests = 4;
 #######################
 # Constant
 #######################
-my $STATE_OK = 0;
-my $STATE_WARNING = 1; 
-my $STATE_CRITICAL = 2;
-my $STATE_UNKNOWN=3;
-
 my $VERSION = 1;
 my $PROGNAME = basename($0);
 my ($code,$message);
