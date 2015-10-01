@@ -1,0 +1,83 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use WWW::Mechanize;
+use Test::More;
+use Test::WWW::Mechanize;
+
+#######################
+# Constant
+#######################
+my $STATE_OK = 0;
+my $STATE_WARNING = 1; 
+my $STATE_CRITICAL = 2;
+my $STATE_UNKNOWN=3;
+
+
+#######################
+# Settings
+#######################
+my $url = "https://mywebsite";
+my $searchstring = "Test";
+my $expect = 'Pfad:';
+my $state = 0;
+my $exit_code = $STATE_OK;
+my $number_of_tests = 4;
+my @links = ("patienten-besucher/medizinisches-angebot.html",
+			       "fachpersonen/personalfinder.html",
+			       "speziell/notfall.html",
+			       "patienten-besucher/kliniken-institute-zentren.html",			 
+			);
+
+#######################
+# Main
+#######################
+
+my $t_before = time(); # define start time for perf_data
+my $mech = Test::WWW::Mechanize->new;
+
+# Get Page
+$state = $mech->get_ok($url,
+						{
+							timeout => 5
+						});
+if (!$state) {
+	if ($exit_code < $STATE_CRITICAL) { 
+		$exit_code = $STATE_CRITICAL; 
+	}
+} 
+
+# Follow link on page
+$state = $mech->links_ok( \@links, 'Check all defined links' );
+if (!$state) {
+	if ($exit_code < $STATE_CRITICAL) { 
+		$exit_code = $STATE_CRITICAL; 
+	}
+} 
+
+# Use search field
+$mech->submit_form_ok( {
+	form_number => 1,
+	fields => {
+		"tx_indexedsearch[sword]" => $searchstring
+		}
+	}, "Fill search box with string: $searchstring"
+);
+
+#$mech->dump_text();
+
+# Checking content and preparing exit
+if (!$mech->content_contains($expect)) {
+	if ($exit_code < $STATE_CRITICAL) { 
+		$exit_code = $STATE_CRITICAL; 
+	}
+}
+
+done_testing($number_of_tests);
+my $t_diff = time()-$t_before;
+my $output = "|duration=";
+$output .= join('',$t_diff,"s");
+print $output;
+
+#print $exit_code;
+exit $exit_code;
