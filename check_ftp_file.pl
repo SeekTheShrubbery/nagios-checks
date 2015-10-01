@@ -4,94 +4,135 @@ use Net::FTP;
 use strict;
 use warnings;
 use Getopt::Long;
+use FindBin;
+use lib "$FindBin::Bin/../perl/lib";
+use Monitoring::Plugin;
+use File::Basename;
 
-# Constannt
-my $STATE_OK = 0;
-my $STATE_WARNING = 1; 
-my $STATE_CRITICAL = 2;
-my $STATE_UNKNOWN=3;
-my $PROGNAME = "check_ftp_file.pl";
-my $TMPPATH = "/dev/shm";
-my $TIMEOUT = 5;
-my $TIMESHIFT = 60*10;
-
-# Variables
-my ($opt_S,$opt_user,$opt_password,$opt_f,$opt_p,$opt_t,$opt_a,$opt_h);
+# Vars
+my ($code,$message);
 my ($SERVER,$USER,$PASSWORD,$FILE,$PATH);
-my ($mdtm_time, $current_time, $diff_time, $ftp, $output, $longoutput);
+my ($mdtm_time, $current_time, $diff_time, $ftp, $t_shift);
+
 my $exit_code = 0;
 my (@line, @msg);
 
-Getopt::Long::Configure('bundling');
-GetOptions(
-        "H=s"   => \$opt_S, "Hostname"         => \$opt_S,
-        "u=s"   => \$opt_user, "ftpuser"            => \$opt_user,
-        "p=s" => \$opt_password, "ftppassword"       => \$opt_password,
-        "f=s" => \$opt_f, "filename"        => \$opt_f,
-        "e=s" => \$opt_p, "pathonftp"            => \$opt_p,
-        "t=i" => \$opt_t, "timeout=i"       => \$opt_t,
-        "a=i" => \$opt_a, "fileage=i"      => \$opt_a,
-		"h"   => \$opt_h, "Help"         => \$opt_h);
+my $t_out = 15;
+my $VERSION = 1;
+my $PROGNAME = basename($0);
+my $TMPPATH = "c:/Daten";
 
-sub print_usage () {
-        print "Usage:\n";
-        print "  $PROGNAME -H <hostname> -u <ftpuser> -p <ftppassword> -f <filename> -e <pathonftp> [-t <timeout>] [-a <fileage>]\n";
-        print "  $PROGNAME [-h | --help]\n";
-        print "\n\nOptions:\n";
-        print "  -H\n";
-        print "     Host name or IP Address\n";
-        print "  -u\n";
-        print "     FTP Username\n";
-        print "  -p\n";
-        print "     FTP Password\n";
-        print "  -f\n";
-        print "     Filename on FTP\n";
-        print "  -e\n";
-        print "     Path of file on FTP\n";
-        print "  -t\n";
-        print "     Timeout \(Default: 5 seconds\))\n";
-        print "  -a\n";
-        print "     Age of file on FTP \(Default: 1h\)\n";
+# Teststring ./test.pl -H ksl-vw2k530.gsdnet.ch -u ew.luks054.ksl -p ERcd45.e -f KSL-VLNX082.txt -e /ew.luks054.ksl/Mirth3
+
+my $p = Monitoring::Plugin->new( 
+	usage => "Usage: %s -H <hostname> -u <ftpuser> -p <ftppassword> -f <filename> -e <pathonftp> [-t <timeout>] [-a <fileage>]",
+	version => $VERSION,
+	blurb => "Checks Mirth File output on FTP Server",
+	extra => "
+	    Options:
+        -H
+			Host name or IP Address
+        -u
+          FTP Username
+        -p
+          FTP Password
+        -f
+          Filename on FTP
+        -e
+          Path of file on FTP
+        -t
+          Timeout (Default: 5 seconds)
+        -a
+          Age of file on FTP ()Default: 1h\)
+	",
+	);
+
+$p->add_arg(
+    spec => 'H|hostname=s',
+    help =>	
+	qq{-H, --hostname=STRING
+		Hostname},
+);
+
+$p->add_arg(
+    spec => 'u|ftpuser=s',
+    help =>	
+	qq{-u, --ftpuser=STRING
+		FTP User},
+);
+
+$p->add_arg(
+    spec => 'p|ftppassword=s',
+    help =>	
+	qq{-p, --ftppassword=STRING
+		FTP Password},
+);
+
+$p->add_arg(
+    spec => 'f|file=s',
+    help =>	
+	qq{-f, --file=STRING
+		Hostname},
+);
+
+$p->add_arg(
+    spec => 'e|path=s',
+    help =>	
+	qq{-e, --path=STRING
+		Path on FTP},
+);
+
+$p->add_arg(
+    spec => 't|timeout=i',
+    help =>	
+	qq{-t, --timeout=STRING
+		Timeout},
+);
+
+$p->add_arg(
+    spec => 'a|fileage=i',
+    help =>	
+	qq{-a, --fileage [INTEGER]
+		Fileage},
+);
+
+# Parse arguments and process standard ones (e.g. usage, help, version)
+$p->getopts;
+
+# perform sanity checking on command line options
+if (defined $p->opts->t) {
+    $t_out = $p->opts->timeout;
+}
+
+if (!defined $p->opts->a) {
+	$t_shift = 60*10;
 }
 		
-if ($opt_a) {
-        $TIMEOUT=$opt_t;
-}
-
-if ($opt_a) {
-        $TIMESHIFT=$opt_a;
-}
-
-if ($opt_h) {
-        print_usage();
-        exit $STATE_UNKNOWN;
-}
-
 # Main
 chdir($TMPPATH);
-$ftp = Net::FTP->new($opt_S, Debug => 0, Timeout => $TIMEOUT)
+$ftp = Net::FTP->new($p->opts->H, Debug => 0, Timeout => $t_out)
 	or die "Cannot connect to $SERVER: $@";
-$ftp->login($opt_user,$opt_password)
+$ftp->login($p->opts->u,$p->opts->p)
 	or die "Cannot login ", $ftp->message;
-$ftp->cwd($opt_p)
+$ftp->cwd($p->opts->e)
 	or die "Cannot change working directory ", $ftp->message;
 $current_time = time();
-$mdtm_time = $ftp->mdtm ($opt_f)  
+$mdtm_time = $ftp->mdtm ($p->opts->f)  
 	or die "Cannot get modification date of file/or file doesn't exist", $ftp->message;
 $diff_time = $current_time-$mdtm_time;
-if ($diff_time>$TIMESHIFT){
-	$output .= "Remote file exceeds defined time difference by $diff_time seconds ";
-	$exit_code = $STATE_WARNING;
+if ($diff_time>$t_shift){
+	$p->add_message(WARNING, "Remote file off by $diff_time seconds");
 }
+
 $ftp->binary()
 	or die "failed to change to binary mode", $ftp->message;
-$ftp->get($opt_f)
+$ftp->get($p->opts->f)
 	or die "get failed ", $ftp->message;
 $ftp->quit;
 
 # Open File
-open(my $fh, "<", $opt_f) 
-	or die "cannot open < $opt_f: $!";
+open(my $fh, "<", $p->opts->f) 
+	or die "cannot open < $p->opts->f: $!";
 # Loop through lines
 while (my $line = <$fh>) {
 	chomp($line);
@@ -99,41 +140,31 @@ while (my $line = <$fh>) {
 	SWITCH: {
 		if ($msg[2] == "0") {
 			#OK
-			$output .= "OK: $msg[1] - $msg[4] ";
-			$longoutput .= "OK: $msg[1] - $msg[4]\n";
-			if (!$exit_code) {$exit_code= $STATE_OK};
+			$p->add_message(OK, "$msg[1] - $msg[4]");
 			last SWITCH;
 		};	
 		if ($msg[2] == "1") {
 			#Warning
-			$output .= "WARNING: $msg[1] - $msg[4] ";
-			$longoutput .= "WARNING: $msg[1] - $msg[4]\n";
-			if ($exit_code<$STATE_WARNING) { $exit_code = $STATE_WARNING};
+			$p->add_message(WARNING, "$msg[1] - $msg[4]");
 			last SWITCH;
 		};	
 		if ($msg[2] == "2") {
 			#Critical
-			$output .= "CRITICAL: $msg[1] - $msg[4] ";
-			$longoutput .= "CRITICAL: $msg[1] - $msg[4]\n";
-			if ($exit_code<$STATE_CRITICAL) { $exit_code = $STATE_CRITICAL};
+			$p->add_message(CRITICAL, "$msg[1] - $msg[4]");
 			last SWITCH;
 		};	
 		if ($msg[2] == "3") {
 			#Unknown
-			$output .= "UNKNOWN: $msg[1] - $msg[4] ";
-			$longoutput .= "UNKNOWN: $msg[1] - $msg[4]\n";
-			if ($exit_code<$STATE_UNKNOWN) { $exit_code = $STATE_UNKNOWN};
+			$p->add_message(UNKNOWN, "$msg[1] - $msg[4]");
 			last SWITCH;
 		};	
 	#Default
-	$output .= "UNKNOWN Status Code ";
-	$longoutput .="UNKNOWN Status Code\n";
-	if ($exit_code<$STATE_UNKNOWN) { $exit_code = $STATE_UNKNOWN};
+	$p->add_message(UNKNOWN, "Invalid status code");
+
 	}
 }
 close  $fh;
 
 # Output
-print "$output\n";
-print $longoutput;
-exit $exit_code;
+($code, $message) = $p->check_messages();
+$p->plugin_exit( $code, $message );
