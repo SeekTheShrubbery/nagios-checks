@@ -1,4 +1,12 @@
 #!/usr/bin/perl
+##############################################
+# Script is to test:
+# 1. Access webpage
+# 2. Login to page
+# 3. Find link "Profil" and follow
+# 4. Check for particular content on the profile page
+##############################################
+
 use strict;
 use warnings;
 use WWW::Mechanize;
@@ -8,7 +16,7 @@ use Test::WWW::Mechanize;
 #######################
 # Settings
 #######################
-my $url = "https://mywebsite";
+my $url = "http://mywebsite";
 my $username = "username";
 my $password = "password";
 my $link = "Profil";
@@ -67,9 +75,9 @@ if ($mech->content_contains($expect_string)) {
 	$exit_code = $STATE_CRITICAL;
 }
 done_testing($number_of_tests);
-my $t_after = time();
-my $t_diff = $t_after-$t_before;
-print "|duration = $t_diff";
-print "s\n";
+my $t_diff = time()-$t_before;
+my $output = "|duration=";
+$output .= join('',$t_diff,"s");
+print $output;
 
 exit $exit_code;
