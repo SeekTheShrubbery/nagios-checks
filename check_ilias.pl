@@ -1,12 +1,8 @@
 #!/usr/bin/perl
-##############################################
-# Script is to test:
-# 1. Access webpage
-# 2. Login to page
-# 3. Find link "Profil" and follow
-# 4. Check for particular content on the profile page
-##############################################
-
+use FindBin;
+use lib "$FindBin::Bin/../perl/lib";
+use Monitoring::Plugin;
+use File::Basename;
 use strict;
 use warnings;
 use WWW::Mechanize;
@@ -16,13 +12,11 @@ use Test::WWW::Mechanize;
 #######################
 # Settings
 #######################
-my $url = "http://mywebsite";
+my $url = "https://mywebsite";
 my $username = "username";
 my $password = "password";
 my $link = "Profil";
 my $expect_string = "Profil deaktiviert";
-my $state = 0;
-my $exit_code = 3;
 my $number_of_tests = 4;
 
 #######################
@@ -33,10 +27,16 @@ my $STATE_WARNING = 1;
 my $STATE_CRITICAL = 2;
 my $STATE_UNKNOWN=3;
 
+my $VERSION = 1;
+my $PROGNAME = basename($0);
+my ($code,$message);
+my $state = 0;
+
 #######################
 # Main
 #######################
 
+my $p = Monitoring::Plugin->new( );
 my $t_before = time(); # define start time for perf_data
 my $mech = Test::WWW::Mechanize->new;
 
@@ -46,8 +46,7 @@ $state = $mech->get_ok($url,
 							timeout => 5
 						});
 if (!$state) {
-	print "Website not accessible";
-	exit $STATE_CRITICAL;
+	$p->plugin_die("Website not accessible");
 }
 
 # Login to page
@@ -64,20 +63,22 @@ $mech->submit_form_ok( {
 # Follow link on page
 $state = $mech->follow_link_ok( {text => $link} , "Follow $link link");
 if (!$state) {
-	print "Couldn't login, or link not available";
-	exit $STATE_CRITICAL;
+	$p->add_message(CRITICAL, "Couldn't login, or link not available");
 }
 
 # Checking content and preparing exit
 if ($mech->content_contains($expect_string)) {
-	$exit_code = $STATE_OK;
+	$p->add_message(OK, "Page content found");
 } else {
-	$exit_code = $STATE_CRITICAL;
+	$p->add_message(CRITICAL, "Page content NOT found");
 }
 done_testing($number_of_tests);
 my $t_diff = time()-$t_before;
-my $output = "|duration=";
-$output .= join('',$t_diff,"s");
-print $output;
+$p->add_perfdata(
+     label => "duration",
+     value => $t_diff,
+     uom => "s"
+   );
 
-exit $exit_code;
+($code, $message) = $p->check_messages();
+$p->plugin_exit( $code, $message );
