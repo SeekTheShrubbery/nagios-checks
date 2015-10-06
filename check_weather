@@ -1,0 +1,102 @@
+#!/usr/bin/perl -w
+# $Rev: 11 $
+# $Author: artem $
+# $Date: 2009-05-23 23:09:47 -0700 (Sat, 23 May 2009) $
+ 
+use strict;
+use WWW::Mechanize;
+use JSON -support_by_pp;
+use Data::Dumper;
+use FindBin;
+use lib "$FindBin::Bin/../perl/lib";
+use Monitoring::Plugin;
+
+# Settings
+my $CITY = "Luzern";
+
+# Declaration
+my ($code,$message);
+
+# Main
+my $p = Monitoring::Plugin->new( );
+fetch_json_page("http://api.openweathermap.org/data/2.5/weather?q=$CITY&lang=en&units=metric");
+($code, $message) = $p->check_messages();
+$p->plugin_exit( $code, $message );
+
+sub fetch_json_page
+{
+  my ($json_url) = @_;
+  my $browser = WWW::Mechanize->new();
+
+  eval{
+    # download the json page:
+    #print "Getting json $json_url\n";
+    $browser->get( $json_url );
+    my $content = $browser->content();
+    my $json = new JSON;
+ 
+    # these are some nice json options to relax restrictions a bit:
+    my $json_text = $json->allow_nonref->utf8->relaxed->escape_slash->loose->allow_singlequote->allow_barekey->decode($content);
+	
+	#print Dumper $json_text;
+	#print $json_text->{main}{temp};
+	#print $json_text->{weather}[0]{description};
+	
+	SWITCH: {
+		if ($json_text->{weather}[0]{main} eq "Rain") {
+			#Rain
+			$p->add_message(CRITICAL, $CITY . " - ". $json_text->{weather}[0]{description});
+			last SWITCH;
+		};
+		if ($json_text->{weather}[0]{main} eq "Snow") {
+			#Snow
+			$p->add_message(WARNING, $CITY . " - ". $json_text->{weather}[0]{description});
+			last SWITCH;
+		};
+		if ($json_text->{weather}[0]{main} eq "Clouds") {
+			#Clouds
+			$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description});
+			last SWITCH;
+		};
+		
+		#Default
+		$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description});
+	}
+	
+	# add perf data
+	$p->add_perfdata(
+		label => "temp",
+		value => $json_text->{main}{temp},
+		uom => "C"
+    );
+	$p->add_perfdata(
+		label => "rain",
+		value => $json_text->{'rain'}{'1h'},
+		uom	  => "mm",
+		min   => 0	
+	);
+	$p->add_perfdata(
+		label => "windspeed",
+		value => $json_text->{'wind'}{'speed'},
+		uom	  => "m\/s",	
+		min   => 0
+	);
+	$p->add_perfdata(
+		label => "pressure",
+		value => $json_text->{'main'}{'pressure'},
+		uom	  => "hPa"				
+	);
+	$p->add_perfdata(
+		label => "humidity",
+		value => $json_text->{'main'}{'humidity'},
+		uom	  => "\%",
+		min   => 0,
+		max   => 100
+	);
+
+  };
+  # catch crashes:
+  if($@){
+    $p->plugin_die("[[JSON ERROR]] JSON parser crashed! $@\n");
+  }
+}
