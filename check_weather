@@ -1,7 +1,4 @@
 #!/usr/bin/perl -w
-# $Rev: 11 $
-# $Author: artem $
-# $Date: 2009-05-23 23:09:47 -0700 (Sat, 23 May 2009) $
  
 use strict;
 use WWW::Mechanize;
@@ -10,16 +7,19 @@ use Data::Dumper;
 use FindBin;
 use lib "$FindBin::Bin/../perl/lib";
 use Monitoring::Plugin;
+use POSIX qw( strftime );
+
 
 # Settings
 my $CITY = "Luzern";
+my $LANG = "en";
 
 # Declaration
 my ($code,$message);
 
 # Main
 my $p = Monitoring::Plugin->new( );
-fetch_json_page("http://api.openweathermap.org/data/2.5/weather?q=$CITY&lang=en&units=metric");
+fetch_json_page("http://api.openweathermap.org/data/2.5/weather?q=$CITY&lang=$LANG&units=metric");
 ($code, $message) = $p->check_messages();
 $p->plugin_exit( $code, $message );
 
@@ -27,7 +27,7 @@ sub fetch_json_page
 {
   my ($json_url) = @_;
   my $browser = WWW::Mechanize->new();
-
+  $browser->proxy(['http'], 'http://myproxy');
   eval{
     # download the json page:
     #print "Getting json $json_url\n";
@@ -41,40 +41,50 @@ sub fetch_json_page
 	#print Dumper $json_text;
 	#print $json_text->{main}{temp};
 	#print $json_text->{weather}[0]{description};
-	
+	my $sunrise = strftime("Sunrise %H:%M", localtime($json_text->{'sys'}{'sunrise'}));
+	my $sunset = strftime("Sunset %H:%M", localtime($json_text->{'sys'}{'sunset'}));
+
 	SWITCH: {
 		if ($json_text->{weather}[0]{main} eq "Rain") {
 			#Rain
-			$p->add_message(CRITICAL, $CITY . " - ". $json_text->{weather}[0]{description});
+			$p->add_message(CRITICAL, $CITY . " - ". $json_text->{weather}[0]{description}. ". $sunrise - $sunset");
 			last SWITCH;
 		};
 		if ($json_text->{weather}[0]{main} eq "Snow") {
 			#Snow
-			$p->add_message(WARNING, $CITY . " - ". $json_text->{weather}[0]{description});
+			$p->add_message(WARNING, $CITY . " - ". $json_text->{weather}[0]{description}. ". $sunrise - $sunset");
 			last SWITCH;
 		};
 		if ($json_text->{weather}[0]{main} eq "Clouds") {
 			#Clouds
-			$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description});
+			$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description}. ". $sunrise - $sunset");
 			last SWITCH;
 		};
+		if ($json_text->{weather}[0]{main} eq "Mist") {
+			#Rain
+			$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description}. ". $sunrise - $sunset");
+			last SWITCH;
+		};		
 		
 		#Default
-		$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description});
+		$p->add_message(OK, $CITY . " - ". $json_text->{weather}[0]{description}. ". $sunrise - $sunset");
 	}
-	
+		
 	# add perf data
 	$p->add_perfdata(
 		label => "temp",
 		value => $json_text->{main}{temp},
 		uom => "C"
     );
-	$p->add_perfdata(
-		label => "rain",
-		value => $json_text->{'rain'}{'1h'},
-		uom	  => "mm",
-		min   => 0	
-	);
+	
+	if (defined $json_text->{'rain'}{'1h'}) {
+		$p->add_perfdata(
+			label => "rain",
+			value => $json_text->{'rain'}{'1h'},
+			uom	  => "mm",
+			min   => 0);
+	}
+	
 	$p->add_perfdata(
 		label => "windspeed",
 		value => $json_text->{'wind'}{'speed'},
