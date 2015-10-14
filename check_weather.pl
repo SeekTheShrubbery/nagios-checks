@@ -12,13 +12,14 @@ use POSIX qw( strftime );
 # Settings
 my $CITY = "Luzern";
 my $LANG = "en";
+my $APPID = "";
 
 # Declaration
 my ($code,$message);
 
 # Main
 my $p = Monitoring::Plugin->new( );
-fetch_json_page("http://api.openweathermap.org/data/2.5/weather?q=$CITY&lang=$LANG&units=metric");
+fetch_json_page("http://api.openweathermap.org/data/2.5/weather?q=$CITY&lang=$LANG&units=metric&APPID=$APPID");
 ($code, $message) = $p->check_messages();
 $p->plugin_exit( $code, $message );
 
@@ -27,7 +28,7 @@ sub fetch_json_page
 {
   my ($json_url) = @_;
   my $browser = WWW::Mechanize->new();
-  $browser->proxy(['http'], '');
+  $browser->proxy(['http'], 'http://myproxy');
   eval{
     # download the json page:
     #print "Getting json $json_url\n";
@@ -39,8 +40,6 @@ sub fetch_json_page
     my $json_text = $json->allow_nonref->utf8->relaxed->escape_slash->loose->allow_singlequote->allow_barekey->decode($content);
 	
 	#print Dumper $json_text;
-	#print $json_text->{main}{temp};
-	#print $json_text->{weather}[0]{description};
 	my $sunrise = strftime("Sunrise %H:%M", localtime($json_text->{'sys'}{'sunrise'}));
 	my $sunset = strftime("Sunset %H:%M", localtime($json_text->{'sys'}{'sunset'}));
 	my $output = $CITY . " - ". $json_text->{weather}[0]{description}. ". $sunrise - $sunset";
