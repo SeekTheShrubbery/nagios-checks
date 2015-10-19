@@ -13,7 +13,7 @@ use POSIX qw( strftime );
 my $CITY = "Luzern";
 my $LANG = "en";
 my $APPID = "";
-my $PROXY = 'http://user:password!@proxy.domain.zz:8080/';
+my $PROXY = '';
 
 # Declaration
 my ($code,$message);
