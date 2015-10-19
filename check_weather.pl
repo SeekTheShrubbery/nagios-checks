@@ -13,6 +13,7 @@ use POSIX qw( strftime );
 my $CITY = "Luzern";
 my $LANG = "en";
 my $APPID = "";
+my $PROXY = 'http://user:password!@proxy.domain.zz:8080/';
 
 # Declaration
 my ($code,$message);
@@ -28,7 +29,7 @@ sub fetch_json_page
 {
   my ($json_url) = @_;
   my $browser = WWW::Mechanize->new();
-  $browser->proxy(['http'], 'http://myproxy');
+  $browser->proxy(['http'], $PROXY);
   eval{
     # download the json page:
     #print "Getting json $json_url\n";
