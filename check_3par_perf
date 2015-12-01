@@ -123,15 +123,15 @@ then
 
         if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
-                echo CRITICAL! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
+                echo CRITICAL! The following ps have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
 		exit 2
         else
                 if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
-                        echo WARNING! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
+                        echo WARNING! The following ps have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
 			exit 1
                 else
-                        echo OK : All nodes have normal status
+                        echo OK : All ps have normal status
 			exit 0
                 fi
         fi
@@ -148,15 +148,15 @@ then
 
         if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
-                echo CRITICAL! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
+                echo CRITICAL! The following ps have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
 		exit 2
         else
                 if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
-                        echo WARNING! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
+                        echo WARNING! The following ps have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
 			exit 1
                 else
-                        echo OK : All nodes have normal status
+                        echo OK : All ps have normal status
 			exit 0
                 fi
         fi
