@@ -52,14 +52,18 @@
 #                       >= $PCWARNINGNL ->      Warning
 #                       >= $PCCRITICALNL ->     Critical
 #
-#	check_ps : Check Power Supply Node and Cage
+#	check_ps_node : Check Power Supply Node
+#                       Degraded ->     	Warning
+#                       Failed ->       	Critical
+#
+#	check_ps_cage : Check Power Supply Cage
 #                       Degraded ->     	Warning
 #                       Failed ->       	Critical
 #
 
 if [ "$#" -ne 3 ] || [ "$1" == "" ] || [ "$2" == "" ] || [ "$3" == "" ]
 then
-	echo Invalid usage : check_3par_perf InServ Username/passwordfile Command
+	echo Invalid usage : check_3par_perf InServ Username Command
 	exit 3
 fi
 
@@ -133,49 +137,52 @@ then
         fi
 fi
 
-if [ "$COMMAND" == "check_ps" ]
+if [ "$COMMAND" == "check_ps_node" ]
 then
 	TMPOUT=$( $CONNECTCOMMAND shownode -ps -nohdtot 2>&1 )
         if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
-                RC=3
+                exit 3
         fi
 
         if [ $( echo "$TMPOUT" | grep -c -i failed ) -gt 0 ]
         then
                 echo CRITICAL! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i failed | tr -s " " | tr -d '\n' )
-		RC=2
+		exit 2
         else
                 if [ $( echo "$TMPOUT" | grep -c -i degraded ) -gt 0 ]
                 then
                         echo WARNING! The following nodes have abnormal status : $( echo "$TMPOUT" | grep -i degraded | tr -s " " | tr -d '\n' )
-			RC=1
+			exit 1
                 else
                         echo OK : All nodes have normal status
-			RC=0
+			exit 0
                 fi
         fi
+fi
 
+if [ "$COMMAND" == "check_ps_cage" ]
+then
 	TMPOUT=$( $CONNECTCOMMAND showcage -d 2>&1 )
 	if [ $? -gt 0 ]
         then
                 echo Could not connect to InServ $INSERV
-                RC=3
+                exit 3
         fi
 
         if [ $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Failed") print cage" "$0}' | wc -l ) -gt 0 ]
         then
                 echo CRITICAL! The following cages have abnormal status : $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Failed") print cage" "$0}' | tr -s " " | tr -d '\n' )
-		RC=2
+		exit 2
         else
                 if [ $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Degraded") print cage" "$0}' | wc -l ) -gt 0 ]
                 then
                         echo WARNING! The following cages have abnormal status : $( echo "$TMPOUT" | awk '{ if ($0 ~ "------Cage") cage=$5; if ($0 ~ "Degraded") print cage" "$0}' | tr -s " " | tr -d '\n' )
-			RC=1
+			exit 1
                 else
                         echo OK : All nodes have normal status
-			RC=0
+			exit 0
                 fi
         fi
 fi
